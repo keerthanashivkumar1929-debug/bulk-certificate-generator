@@ -5,15 +5,15 @@ import os
 
 app = Flask(__name__)
 
-# Create database tables
+
 create_tables()
 
-# Folder where generated certificates will be stored
+
 CERTIFICATE_FOLDER = "certificates"
 os.makedirs(CERTIFICATE_FOLDER, exist_ok=True)
 
 
-# Home / test API
+
 @app.route("/")
 def home():
     return {
@@ -21,7 +21,7 @@ def home():
     }
 
 
-# Create a bulk certificate generation job
+
 @app.route("/jobs", methods=["POST"])
 def create_job():
 
@@ -36,13 +36,13 @@ def create_job():
     date = data.get("date")
     recipients = data.get("recipients")
 
-    # Validate event details
+   
     if not event_name or not date:
         return jsonify({
             "error": "event_name and date are required"
         }), 400
 
-    # Validate recipient list
+    
     if not isinstance(recipients, list) or len(recipients) == 0:
         return jsonify({
             "error": "recipients must be a non-empty list"
@@ -50,7 +50,7 @@ def create_job():
 
     connection = get_db_connection()
 
-    # Create a new job
+    
     cursor = connection.execute(
         """
         INSERT INTO jobs
@@ -66,13 +66,13 @@ def create_job():
     successful = 0
     failed = 0
 
-    # Generate certificate for each recipient
+ 
     for recipient in recipients:
 
         name = recipient.get("name")
         email = recipient.get("email")
 
-        # Validate recipient
+        
         if not name or not email:
 
             connection.execute(
@@ -105,7 +105,7 @@ def create_job():
                 filename
             )
 
-            # Generate PDF
+            
             generate_certificate(
                 name,
                 event_name,
@@ -113,7 +113,7 @@ def create_job():
                 file_path
             )
 
-            # Save successful certificate
+          
             connection.execute(
                 """
                 INSERT INTO certificates
@@ -134,7 +134,7 @@ def create_job():
 
         except Exception as error:
 
-            # One failed certificate should not stop others
+          
             connection.execute(
                 """
                 INSERT INTO certificates
@@ -153,7 +153,7 @@ def create_job():
 
             failed += 1
 
-    # Final job status
+    
     if failed == 0:
         status = "completed"
     else:
@@ -180,7 +180,7 @@ def create_job():
     }), 201
 
 
-# Check job status
+
 @app.route("/jobs/<int:job_id>", methods=["GET"])
 def get_job_status(job_id):
 
@@ -201,7 +201,7 @@ def get_job_status(job_id):
     return jsonify(dict(job))
 
 
-# Get certificates belonging to a job
+
 @app.route("/jobs/<int:job_id>/certificates", methods=["GET"])
 def get_certificates(job_id):
 
@@ -226,7 +226,7 @@ def get_certificates(job_id):
     })
 
 
-# Download a generated certificate
+
 @app.route("/certificates/<int:certificate_id>", methods=["GET"])
 def download_certificate(certificate_id):
 
@@ -258,6 +258,6 @@ def download_certificate(certificate_id):
     )
 
 
-# Start the Flask application
+
 if __name__ == "__main__":
     app.run(debug=True)
